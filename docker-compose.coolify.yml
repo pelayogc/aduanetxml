@@ -1,0 +1,60 @@
+services:
+  aduanetxml-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      NAV_SQLSERVER_HOST: ${NAV_SQLSERVER_HOST}
+      NAV_SQLSERVER_PORT: ${NAV_SQLSERVER_PORT:-1433}
+      NAV_SQLSERVER_DATABASE: ${NAV_SQLSERVER_DATABASE}
+      NAV_SQLSERVER_USER: ${NAV_SQLSERVER_USER}
+      NAV_SQLSERVER_PASSWORD: ${NAV_SQLSERVER_PASSWORD}
+      NAV_SQLSERVER_COMPANY: ${NAV_SQLSERVER_COMPANY}
+      NAV_SQLSERVER_ENCRYPT: ${NAV_SQLSERVER_ENCRYPT:-false}
+      NAV_SQLSERVER_TRUST_CERTIFICATE: ${NAV_SQLSERVER_TRUST_CERTIFICATE:-true}
+      DOCUMENT_STORAGE_ROOT: /data/app-storage
+      ADUANETXML_OUTBOX: /data/aduanetxml/BandejaSalidaPrevioFirma
+      ADUANETXML_SEND_OUTBOX: /data/aduanetxml/BandejaSalida
+      ADUANETXML_SENT: /data/aduanetxml/Enviados
+      ADUANETXML_INBOX: /data/aduanetxml/BandejaEntrada
+      ADUANETXML_REJECTED: /data/aduanetxml/Rechazados
+      ADUANETXML_ERRORS: /data/aduanetxml/errors
+      ADUANETXML_PROCESSED: /data/aduanetxml/processed
+      ADUANETXML_LOGS: /data/aduanetxml/Logs
+      INTERNAL_BASE_URL: https://aduanetxml.nobel.es
+      INTERNAL_JOB_TOKEN: ${INTERNAL_JOB_TOKEN}
+    volumes:
+      - aduanetxml-workdir:/data/aduanetxml
+      - aduanetxml-app-storage:/data/app-storage
+    ports:
+      - "3000"
+    restart: unless-stopped
+
+  aduanetxml-runner:
+    build:
+      context: ./runner
+      dockerfile: Dockerfile
+    environment:
+      ADUANETXML_WORKDIR: /data/aduanetxml
+      ADUANETXML_CERT_PATH: /data/aduanetxml/micerti.pfx
+      ADUANETXML_CERT_PASSWORD: ${ADUANETXML_CERT_PASSWORD}
+      ADUANETXML_NIF: ${ADUANETXML_NIF}
+      ADUANETXML_NOMBRE: ${ADUANETXML_NOMBRE}
+      ADUANETXML_HOST_SERVICIO_WEB: ${ADUANETXML_HOST_SERVICIO_WEB:-P}
+      ADUANETXML_TIPO_RED: ${ADUANETXML_TIPO_RED:-INTERNET}
+      ADUANETXML_REQUIERE_BE: ${ADUANETXML_REQUIERE_BE:-SI}
+      ADUANETXML_DEBUG: ${ADUANETXML_DEBUG:-3}
+    volumes:
+      - aduanetxml-workdir:/data/aduanetxml
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "test -d /data/aduanetxml/BandejaSalidaPrevioFirma && pgrep -f aduanetxml_12_0.jar >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  aduanetxml-workdir:
+  aduanetxml-app-storage:

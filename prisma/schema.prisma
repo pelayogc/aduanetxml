@@ -1,0 +1,301 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  ADUANAS
+  ALMACEN
+  CONSULTA
+}
+
+enum OperationType {
+  VENTA_CANARIAS
+  VENTA_CEUTA
+  VENTA_MELILLA
+  MUESTRA_PROFESOR
+  NO_ADUANERO
+}
+
+enum Destination {
+  CANARIAS
+  CEUTA
+  MELILLA
+  PENINSULA
+  OTRO
+  DESCONOCIDO
+}
+
+enum CustomsFileStatus {
+  BORRADOR
+  PENDIENTE_DATOS
+  LISTO_PARA_GENERAR
+  XML_GENERADO
+  PENDIENTE_FIRMA_ENVIO
+  EN_PROCESO_ADUANETXML
+  FIRMADO_ENVIADO
+  ENVIADO_ADUANETXML
+  RECHAZADO_ADUANETXML
+  RESPUESTA_RECIBIDA
+  ADMITIDO
+  LEVANTE_OBTENIDO
+  ERROR_AEAT
+  ERROR_TECNICO
+  NO_REQUIERE_XML
+  ARCHIVADO
+  CANCELADO
+  PENDIENTE_REGENERAR_XML
+}
+
+enum DocumentType {
+  FACTURA_ADUANERA
+  PACKING_LIST
+  PORTADA_EXPEDIENTE
+  MUESTRA_SIN_VALOR
+  XML_GENERADO
+  XML_DEPOSITADO
+  XML_FIRMADO_ENVIADO
+  XML_RECHAZADO
+  XML_RESPUESTA_AEAT
+  XML_ENVIADO
+  XML_RESPUESTA
+  JUSTIFICANTE_AEAT
+  LEVANTE_AEAT
+  LOG_ADUANETXML
+  ZIP_EXPEDIENTE
+}
+
+enum XmlSubmissionStatus {
+  GENERATED
+  DEPOSITED
+  IN_PROCESS
+  SIGNED_SENT
+  SENT_TO_ADUANETXML
+  REJECTED_ADUANETXML
+  RESPONSE_RECEIVED
+  ERROR_AEAT
+  ERROR_TECNICO
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      UserRole @default(CONSULTA)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CustomsFile {
+  id                         String            @id @default(cuid())
+  expedienteCode             String            @unique
+  documentNo                 String            @unique
+  shipmentNo                 String?
+  operationType              OperationType
+  destination                Destination
+  status                     CustomsFileStatus @default(BORRADOR)
+  customerNo                 String?
+  customerName               String?
+  customerVatNo              String?
+  customerAddress            String?
+  customerPostCode           String?
+  customerCity               String?
+  customerProvince           String?
+  customerCountryRegionCode  String?
+  customerPhone              String?
+  customerEmail              String?
+  invoiceDate                DateTime?
+  invoiceAmount              Decimal           @default(0) @db.Decimal(18, 2)
+  invoiceAmountIncludingVat  Decimal           @default(0) @db.Decimal(18, 2)
+  currencyCode               String?
+  numBultos                  Int?
+  pesoNetoKg                 Decimal?          @db.Decimal(18, 3)
+  pesoBrutoKg                Decimal?          @db.Decimal(18, 3)
+  aduanaTexto                String?
+  aduanaCodigoAeat           String?
+  codigoMercancia            String?
+  descripcionMercancia       String?
+  partidaFacturaTexto        String?
+  paisOrigen                 String?           @default("ES")
+  t2lf                       Boolean           @default(false)
+  sinSoporteMagnetico        Boolean           @default(false)
+  consentimientoDestinatario Boolean           @default(false)
+  transportista              String?
+  tracking                   String?
+  tipoBulto                  String?
+  procedureCode              String?
+  declarationCode            String?
+  destinationCode            String?
+  customsRegime              String?
+  mrn                        String?
+  csv                        String?
+  levante                    String?
+  fechaAdmision              DateTime?
+  fechaLevante               DateTime?
+  circuito                   String?
+  declarante                 String?
+  representante              String?
+  pendingFields              Json              @default("[]")
+  extractedCustomsText       String?
+  createdBy                  String            @default("system")
+  updatedBy                  String            @default("system")
+  createdAt                  DateTime          @default(now())
+  updatedAt                  DateTime          @updatedAt
+  lines                      CustomsFileLine[]
+  documents                  CustomsDocument[]
+  xmlSubmissions             CustomsXmlSubmission[]
+  auditLogs                  CustomsAuditLog[]
+
+  @@index([status])
+  @@index([destination])
+  @@index([operationType])
+  @@index([invoiceDate])
+}
+
+model CustomsFileLine {
+  id             String      @id @default(cuid())
+  customsFileId  String
+  documentNo     String
+  lineNo         Int
+  navType        Int?
+  itemNo         String?
+  isbn           String?
+  description    String?
+  quantity       Decimal     @default(0) @db.Decimal(18, 3)
+  unitPrice      Decimal     @default(0) @db.Decimal(18, 4)
+  lineAmount     Decimal     @default(0) @db.Decimal(18, 2)
+  amountInclVat  Decimal     @default(0) @db.Decimal(18, 2)
+  vatPercent     Decimal?    @db.Decimal(8, 3)
+  taricCode      String?
+  countryOrigin  String?
+  netWeightKg    Decimal?    @db.Decimal(18, 3)
+  grossWeightKg  Decimal?    @db.Decimal(18, 3)
+  customsFile    CustomsFile @relation(fields: [customsFileId], references: [id], onDelete: Cascade)
+
+  @@unique([customsFileId, lineNo])
+  @@index([documentNo])
+}
+
+model CustomsXmlSubmission {
+  id                 String              @id @default(cuid())
+  customsFileId      String
+  version            Int
+  procedureCode      String
+  xmlFilename        String
+  xmlPath            String
+  status             XmlSubmissionStatus @default(GENERATED)
+  sentAt             DateTime?
+  responseReceivedAt DateTime?
+  responseFilename   String?
+  responsePath       String?
+  errorCode          String?
+  errorMessage       String?
+  createdBy          String              @default("system")
+  createdAt          DateTime            @default(now())
+  customsFile        CustomsFile         @relation(fields: [customsFileId], references: [id], onDelete: Cascade)
+
+  @@unique([customsFileId, version])
+  @@index([status])
+}
+
+model CustomsDocument {
+  id            String       @id @default(cuid())
+  customsFileId String
+  documentType  DocumentType
+  filename      String
+  path          String
+  createdBy     String       @default("system")
+  createdAt     DateTime     @default(now())
+  customsFile   CustomsFile  @relation(fields: [customsFileId], references: [id], onDelete: Cascade)
+
+  @@index([documentType])
+}
+
+model CustomsAuditLog {
+  id             String      @id @default(cuid())
+  customsFileId  String
+  eventDatetime  DateTime    @default(now())
+  userId         String?
+  action         String
+  previousStatus CustomsFileStatus?
+  newStatus      CustomsFileStatus?
+  fieldName      String?
+  oldValue       String?
+  newValue       String?
+  message        String?
+  origin         String      @default("app")
+  customsFile    CustomsFile @relation(fields: [customsFileId], references: [id], onDelete: Cascade)
+
+  @@index([eventDatetime])
+  @@index([action])
+}
+
+model CustomsOffice {
+  id                     String   @id @default(cuid())
+  normalizedText          String   @unique
+  aeatCode                String
+  officeType              String?
+  active                  Boolean  @default(true)
+  notes                   String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+model TariffMapping {
+  id                     String   @id @default(cuid())
+  invoiceTariffText       String
+  normalizedTariffText    String
+  goodsCode               String
+  goodsDescription        String
+  active                  Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@unique([normalizedTariffText, goodsCode])
+}
+
+model ProcedureRule {
+  id                         String        @id @default(cuid())
+  destination                 Destination
+  operationType               OperationType
+  minValue                    Decimal?      @db.Decimal(18, 2)
+  maxValue                    Decimal?      @db.Decimal(18, 2)
+  procedureCode               String
+  declarationCode             String?
+  destinationCode             String?
+  customsRegime               String?
+  requiresXml                 Boolean       @default(true)
+  requiresT2lf                Boolean       @default(false)
+  requiresRecipientVat        Boolean       @default(false)
+  requiresConsent             Boolean       @default(false)
+  requiresMrn                 Boolean       @default(false)
+  requiresLevante             Boolean       @default(false)
+  activeFrom                  DateTime      @default(now())
+  activeUntil                 DateTime?
+  active                      Boolean       @default(true)
+  createdAt                   DateTime      @default(now())
+  updatedAt                   DateTime      @updatedAt
+
+  @@index([destination, operationType, active])
+}
+
+model Carrier {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AppSetting {
+  key       String   @id
+  value     String
+  secret    Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+}
