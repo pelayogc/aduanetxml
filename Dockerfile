@@ -19,6 +19,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 RUN apt-get update -y \
   && apt-get install -y --no-install-recommends curl wget openssl ca-certificates \
   && rm -rf /var/lib/apt/lists/*

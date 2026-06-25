@@ -37,6 +37,7 @@ Coolify esta en http://10.164.18.45:8000/
 - En despliegues Coolify con `build_pack=dockerfile`, la imagen debe incluir `curl` y `wget` si el healthcheck HTTP esta activo, porque Coolify puede generar checks con `wget` aunque el aviso mencione ambos. Para Next.js + Prisma sobre `node:*bookworm-slim`, incluir tambien `openssl` y `ca-certificates` en la imagen runtime para evitar avisos/fallos de Prisma y permitir healthchecks.
 - En Coolify, no marcar secretos como `is_buildtime=true` salvo que sea imprescindible. En despliegues Dockerfile, las variables build-time pueden aparecer como `ARG` en el Dockerfile generado/logs internos. Preferir runtime-only para passwords, tokens y credenciales NAV.
 - Configurar healthcheck de Coolify contra una ruta barata tipo `/healthz` que no consulte Prisma/NAV ni dependa de datos externos. Evitar usar `/` como healthcheck en apps Next.js con server components de base de datos.
+- En imagenes standalone de Next.js dentro de Docker, fijar `HOSTNAME=0.0.0.0`. Docker define `HOSTNAME` como el id del contenedor y Next puede quedar escuchando ahi en vez de en `localhost`, rompiendo el healthcheck interno de Coolify.
 
 ## Aprendizajes PowerShell y SSH
 
