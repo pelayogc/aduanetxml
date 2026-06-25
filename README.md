@@ -443,6 +443,7 @@ Configuracion a verificar antes de desplegar:
 - Volumen compartido.
 - Base de datos asociada.
 - Healthcheck.
+- Ruta de healthcheck: `/healthz`.
 
 Job recomendado cada 5 minutos:
 
@@ -468,6 +469,7 @@ POST /api/customs-files/:id/send-to-aduanetxml
 POST /api/aduanetxml/sync
 POST /api/aduanetxml/process-responses
 GET  /api/customs-files/:id/documents/:documentId/download
+GET  /healthz
 ```
 
 ## Modelo de datos
