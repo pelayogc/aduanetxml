@@ -20,7 +20,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 RUN apt-get update -y \
-  && apt-get install -y --no-install-recommends curl openssl ca-certificates \
+  && apt-get install -y --no-install-recommends curl wget openssl ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/public ./public

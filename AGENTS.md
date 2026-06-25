@@ -34,7 +34,8 @@ Coolify esta en http://10.164.18.45:8000/
 - Cloudflare Access puede ocultar errores de origen. Para aislarlos, usar un bypass temporal solo durante la prueba, verificar que el origen devuelve 200, y eliminar el bypass al terminar. La verificacion final sin sesion debe ser un 302 hacia Cloudflare Access; con sesion autorizada debe cargar la app.
 - Tras cambiar rutas de Cloudflare Tunnel, verificar tanto el dominio publico como una ruta interna sencilla de la app. Documentar la version del tunel actualizada y confirmar que no se han dejado politicas `bypass` abiertas.
 - En apps nuevas de Coolify, activar o definir healthcheck cuando sea posible. Un estado `running:unknown` puede ser aceptable si la app responde, pero dificulta distinguir contenedor arrancado de servicio realmente saludable.
-- En despliegues Coolify con `build_pack=dockerfile`, la imagen debe incluir `curl` o `wget` si el healthcheck HTTP esta activo. Para Next.js + Prisma sobre `node:*bookworm-slim`, incluir tambien `openssl` y `ca-certificates` en la imagen runtime para evitar avisos/fallos de Prisma y permitir healthchecks.
+- En despliegues Coolify con `build_pack=dockerfile`, la imagen debe incluir `curl` y `wget` si el healthcheck HTTP esta activo, porque Coolify puede generar checks con `wget` aunque el aviso mencione ambos. Para Next.js + Prisma sobre `node:*bookworm-slim`, incluir tambien `openssl` y `ca-certificates` en la imagen runtime para evitar avisos/fallos de Prisma y permitir healthchecks.
+- En Coolify, no marcar secretos como `is_buildtime=true` salvo que sea imprescindible. En despliegues Dockerfile, las variables build-time pueden aparecer como `ARG` en el Dockerfile generado/logs internos. Preferir runtime-only para passwords, tokens y credenciales NAV.
 
 ## Aprendizajes PowerShell y SSH
 
